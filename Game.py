@@ -17,11 +17,9 @@ class Game:
         rounds = 0
         pass_counter = 0
         while not end_game:
+            action = self.players[i].play(reset, self)
             if reset == 0:  #new round
                 reset = 1
-                action = self.players[i].play(None, self)
-            else:
-                action = self.players[i].play(1, self)
             if action == 0:
                 pass_counter += 1
             if pass_counter == 3:

@@ -52,26 +52,38 @@ class Player:
         else:
             return False
 
+    def play_allrank(self, new_round, game_obj):
+        max_len = 0
+        max_list = 0
+        if new_round == 0:
+            for i in self.grouped_stash:  # find the rank with maximum cards
+                # for j in i:
+                #     print(j.rank,j.suit)
+                if len(i) > max_len:
+                    max_len = len(i)
+                    max_list = i
+            self.grouped_stash.remove(max_list)
+        else:
+            for i in self.grouped_stash:
+                if game_obj.played_deck[-1][0].rank == i[0].rank:
+                    self.grouped_stash.remove(i)
+                    max_list = i
+        if max_list == 0:
+            return 0
+        game_obj.played_deck.append(max_list)
+        for card in max_list:
+            print(self.name + " played " + card.rank + SUIT_SYMBOLS[card.suit])
+        while max_list[0] in self.stash:
+            self.stash.remove(max_list[0])
+        return 1
+
 class CredulousPlayer(Player):
     def __init__(self, name):
         super().__init__(name, character="Credulous")
 
     def play(self, new_round, game_obj):
-        is_rank = False
-        if new_round is None:  # a new round start with random card
-            lastcard = random.choice(self.stash)
-            print(self.name + " played " + lastcard.rank + SUIT_SYMBOLS[lastcard.suit])
-            self.stash.remove(lastcard)
-            game_obj.played_deck.append(lastcard)
-            is_rank = True
-        else:   #play depending on previous card
-            for c in self.stash:
-                if game_obj.played_deck[-1].rank == c.rank:
-                    is_rank = True
-                    print(self.name + " played " + c.rank + SUIT_SYMBOLS[c.suit])
-                    self.stash.remove(c)
-                    game_obj.played_deck.append(c)
-        if is_rank is False:
+        played = self.play_allrank(new_round, game_obj)
+        if played == 0:  #card not found, player must pass
             print(self.name + "passed")
             return 0
         else:
