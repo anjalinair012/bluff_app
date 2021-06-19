@@ -55,26 +55,24 @@ class Player:
     def play_allrank(self, new_round, game_obj):
         max_len = 0
         max_list = 0
-        if new_round == 0:
+        if new_round == 0: #if new round
             for i in self.grouped_stash:  # find the rank with maximum cards
-                # for j in i:
-                #     print(j.rank,j.suit)
                 if len(i) > max_len:
                     max_len = len(i)
                     max_list = i
-            self.grouped_stash.remove(max_list)
         else:
             for i in self.grouped_stash:
                 if game_obj.played_deck[-1][0].rank == i[0].rank:
-                    self.grouped_stash.remove(i)
                     max_list = i
+                    break
         if max_list == 0:
             return 0
+        self.grouped_stash.remove(max_list)
         game_obj.played_deck.append(max_list)
         for card in max_list:
             print(self.name + " played " + card.rank + SUIT_SYMBOLS[card.suit])
-        while max_list[0] in self.stash:
-            self.stash.remove(max_list[0])
+        for card in max_list:
+            self.stash.remove(card)
         return 1
 
 class CredulousPlayer(Player):
