@@ -7,7 +7,7 @@ class Game:
 
         for i in range(hands):
             name = "Player_" + str(i + 1)
-            self.players.append(CredulousPlayer(name))
+            self.players.append(CredulousPlayer(name= name))
 
     def game_play(self):
         reset = 0
@@ -16,6 +16,7 @@ class Game:
         rounds = 0
         round_starter = 0
         pass_counter = 0
+        round_card = None
         # for player in self.players:
         #     print(player.name)
         #     for key, value in player.belief_model.items():
@@ -23,17 +24,25 @@ class Game:
         #         for i in value:
         #             print(i.rank,i.suit)
         while not end_game:
-            agent = (3 if i == 0 else i-1) #get previous agent who played
+            agent = (2 if i == 0 else i-1) #get previous agent who played
             action = self.players[i].choose_action(reset, self.players[agent])
-            if action == 1:
-                play = self.players[i].play(reset, self)
+            if action == 1:  #agent plays
+                play = self.players[i].play(reset, self, round_card)
+                if type(play) is not int:  #if agent played
+                    for card in play:
+                        self.players[i].stash.remove(card)  #remove played cards from agent's hand
+                    self.players[i].grouped_stash.remove(play)
+                    self.played_deck.append(play)  #add played cards to played deck
             else:
-                self.players[i].call_bluff(self, self.players[agent])
+                bluff_play = self.players[i].call_bluff(self, self.players[agent])
+                print(bluff_play)
             if reset == 0:  #new round
                 reset = 1
                 round_starter = i
+                round_card = self.players[i].announce[0]
             if play == 0:
                 pass_counter += 1
+                self.players[i].announce = list()
             if pass_counter == 3:
                 rounds = rounds + 1
                 print("End of round " + str(rounds))
@@ -55,6 +64,6 @@ class Game:
     def check_endgame_condition(self):
 
         for p in self.players:
-            if (len(p.stash) == 0):
+            if (len(p.grouped_stash) == 0):
                 print(p.name + "Wins!!")
                 return True

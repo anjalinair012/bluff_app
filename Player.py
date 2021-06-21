@@ -39,7 +39,7 @@ class Player:
 
     def choose_action(self, reset, prev_agent):
         # if new round or previous play matches agent's belief, play a card
-        if reset == 0:
+        if reset == 0 or (not prev_agent.announce):  #new round or no announcement made by prev_agent
             return 1
         check = self.check_belief_model(prev_agent)
         if check is True:
@@ -54,30 +54,35 @@ class Player:
         # count the cards of same rank in agents belief system for all agents except prev_agent.
         for key, value in self.belief_model.items():
             if key != prev_agent.name and rank == value[0]:
-                count_card = len(value)
+                count_card = count_card + len(value)
                 break
         # if prev_agent has announces more cards than permitted by agent's belief system, call bluff
-        if 3 - count_card > num:
+        if 3 - count_card < num:
             return False
         return True
 
 
-    def set_belief_model(self, agent):
-        card_known = list()
-        for card in agent.stash:
-            card_known.append(card.rank)
+    def set_belief_model(self, agent,card_known):
+        cards_known = list()
+        for card in card_known:
+            cards_known.append(card)
         if agent.name in self.belief_model.keys():
-            self.belief_model.get(agent.name).append(card_known)
+                self.belief_model.get(agent.name).append(cards_known)
         else:
-            self.belief_model.update({agent.name: card_known})
+            self.belief_model.update({agent.name: cards_known})
+        # print(self.name)
+        # for key,val in self.belief_model.items():
+        #     print(str(key)+":"+str(val))
+
 
 
     def call_bluff(self, game_obj, prev_agent):
+        print("Agent-"+str(self.name)+"calls bluff on Agent-"+str(prev_agent.name))
         if prev_agent.announce != game_obj.played_deck[-1]:
             print("Bluff caught")
             for agent in game_obj.players:
-                agent.set_belief_model()
-        print()
+                agent.set_belief_model(prev_agent, game_obj.played_deck[-1])
+        return 1
 
 
     def removeFrom_hand(self, card):
@@ -93,43 +98,42 @@ class Player:
         else:
             return False
 
-    def play_allrank(self, new_round, game_obj):
+    def play_allrank(self, reset, round_card):
         max_len = 0
         max_list = 0
-        if new_round == 0: #if new round
+        if reset == 0: #if new round
             for i in self.grouped_stash:  # find the rank with maximum cards
                 if len(i) > max_len:
                     max_len = len(i)
                     max_list = i
         else:
             for i in self.grouped_stash:
-                if game_obj.played_deck[-1][0].rank == i[0].rank:
+                if round_card == i[0].rank:
                     max_list = i
                     break
         if max_list == 0:
             return 0
-        self.grouped_stash.remove(max_list)
-        game_obj.played_deck.append(max_list)
         for card in max_list:
             print(self.name + " played " + card.rank + SUIT_SYMBOLS[card.suit])
-        for card in max_list:
-            self.stash.remove(card)
         return max_list
 
 class CredulousPlayer(Player):
     def __init__(self, name):
         super().__init__(name, character="Credulous")
 
-    def play(self, round, game_obj):
-        played = self.play_allrank(round, game_obj)
+    def play(self, reset, game_obj, round_card):
+        played = self.play_allrank(reset, round_card)  #play true, all cards of a rank in player's stash
         if type(played) is int:  #card not found, player must pass
             print(self.name + "passed")
             return 0
         else:
             self.announce = [played[0].rank]*len(played)
+            for player in game_obj.players:   #all player's belief system updated with card played by active player
+                if player.name != self.name:
+                    player.set_belief_model(self, self.announce)
             print("End of turn for " + self.name)
             print("\n")
-            return 1
+            return played
 
 
 

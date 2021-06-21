@@ -16,7 +16,8 @@ def main():
             card = deck.draw_card()
             hand.addTo_hand(card)
     for player in g.players:
-        player.set_belief_model(player)
+        player.belief_model=dict()
+        player.set_belief_model(player, player.stash)
     for player in g.players:
         print(player.name)
 
