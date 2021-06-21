@@ -16,12 +16,23 @@ class Game:
         rounds = 0
         round_starter = 0
         pass_counter = 0
+        # for player in self.players:
+        #     print(player.name)
+        #     for key, value in player.belief_model.items():
+        #         print(key)
+        #         for i in value:
+        #             print(i.rank,i.suit)
         while not end_game:
-            action = self.players[i].play(reset, self)
+            agent = (3 if i == 0 else i-1) #get previous agent who played
+            action = self.players[i].choose_action(reset, self.players[agent])
+            if action == 1:
+                play = self.players[i].play(reset, self)
+            else:
+                self.players[i].call_bluff(self, self.players[agent])
             if reset == 0:  #new round
                 reset = 1
                 round_starter = i
-            if action == 0:
+            if play == 0:
                 pass_counter += 1
             if pass_counter == 3:
                 rounds = rounds + 1
