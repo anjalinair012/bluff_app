@@ -47,11 +47,17 @@ class Player:
         # if new round or previous play matches agent's belief, play a card
         if reset == 0 or (not prev_agent.announce):  #new round or no announcement made by prev_agent
             return 1
+        #call bluff based on trust
+        if self.trust is not None:
+            call_prob = random.random()
+            if call_prob > self.trust[prev_agent]:
+                return 1
         check = self.check_belief_model(prev_agent)
         if check is True:
             return 1
         # call bluff
         return 2
+
 
     def check_belief_model(self, prev_agent):
         rank = prev_agent.announce[0]
