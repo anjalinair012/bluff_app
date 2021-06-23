@@ -50,7 +50,7 @@ class Player:
         #call bluff based on trust
         if self.trust is not None:
             call_prob = random.random()
-            if call_prob > self.trust[prev_agent]:
+            if call_prob > self.trust[prev_agent.name]:
                 return 1
         check = self.check_belief_model(prev_agent)
         if check is True:
@@ -73,13 +73,12 @@ class Player:
             return False
         return True
 
-
-    def set_belief_model(self, agent,card_known):
+    def set_belief_model(self, agent, card_known):
         cards_known = list()
         for card in card_known:
             cards_known.append(card)
         if agent.name in self.belief_model.keys():
-                self.belief_model.get(agent.name).append(cards_known)
+            self.belief_model.get(agent.name).append(cards_known)
         else:
             self.belief_model.update({agent.name: cards_known})
         # print(self.name)
@@ -193,17 +192,18 @@ class CredulousPlayer(Player):
             print("\n")
             return played
 
-    def Cred_set_belief(self, agent, card_known):
-        for i in range(0,len(card_known)):
+    def set_belief_model(self, agent, card_known):
+        for i in range(0, len(card_known)):
             self.belief_model[agent].popitem()
-        self.set_belief_model(agent, card_known)
+        super().set_belief_model(agent, card_known)
+
 
 class SkepticalPlayer(Player):
     def __init__(self, name):
         super().__init__(name, character="Skeptical", bluff_prob=0.5)
 
     def play(self, reset, game_obj, round_card):
-        player_bluff_probability = np.random.choice([0, 1], p = [self.bluff_prob, (1 - self.bluff_prob)])
+        player_bluff_probability = np.random.choice([0, 1], p=[self.bluff_prob, (1 - self.bluff_prob)])
 
         if player_bluff_probability == 0: #bluff_probability < 0.5, player doesnt bluff
             played = self.play_allrank(reset, round_card)
@@ -214,7 +214,7 @@ class SkepticalPlayer(Player):
                 self.announce = [played[0].rank]*len(played)
                 for player in game_obj.players:
                     if player.name != self.name and player.character == "Credulous":
-                        player.set_belief_model(self, self.announce)
+                        player.super().set_belief_model(self, self.announce)
                 print ("End of turn for " + self.name)
                 print ("\n")
                 return played
@@ -228,9 +228,9 @@ class SkepticalPlayer(Player):
                 for player in game_obj.players:
                     if (player.name != self.name) and (player.character == "Credulous"):
                         player.set_belief_model(self, self.announce)
-                print (self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
-                print ("End of turn for " + self.name)
-                print ("\n")
+                print(self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
+                print("End of turn for " + self.name)
+                print("\n")
 
                 return player_bluff_card
 
