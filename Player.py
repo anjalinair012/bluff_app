@@ -10,7 +10,7 @@ RANK_VALUE = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5}
 SUIT_SYMBOLS = {'Hearts': '♡', 'Spades': '♠', 'Diamonds': '♢'}
 
 class Player:
-    def __init__(self, name, character=None, bluff_prob=0, call_prob=None, belief_model=dict(), announce=list()):
+    def __init__(self, name, character=None, bluff_prob=0, call_prob=None, trust=dict(), belief_model=dict(), announce=list()):
         self.stash = list()
         self.grouped_stash = None
         self.name = name
@@ -18,6 +18,7 @@ class Player:
         self.bluff_prob = bluff_prob
         self.call_prob = call_prob
         self.belief_model = belief_model
+        self.trust = trust
         self.announce = announce
 
     def set_bluff_prob(self, bluff_prob):
@@ -238,3 +239,30 @@ class SkepticalPlayer(Player):
                 print ("End of turn for " + self.name)
                 print ("\n")
                 return player_bluff_card
+
+
+class RevisingPlayer(Player):
+    def __init__(self, name):
+        trust = dict()
+        for num in range(1, 4):
+            player_name = "Player_"+str(num)
+            if player_name != name:
+                trust[player_name] = 0.5
+        super().__init__(name, character="Revising", bluff_prob=0.5, trust=trust)
+
+    def play(self, reset, game_obj, round_card):
+        prob = random.random(0.0, 1.0, 0.1)
+        if prob > self.bluff_prob:
+            played = self.play_bluff()
+        else:
+            played = self.play_allrank(reset, round_card)
+        if type(played) is int:  # card not found, player must pass
+            print(self.name + "passed")
+            return 0
+
+    def call_bluff(self, game_obj, prev_agent):
+        bluff = super().call_bluff(self, game_obj, prev_agent)
+        if bluff == 1:
+            self.trust[prev_agent] = self.trust[prev_agent]/3
+        else:
+            self.trust[prev_agent] = self.trust[prev_agent] + self.trust[prev_agent]*0.3
