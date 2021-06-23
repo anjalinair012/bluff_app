@@ -10,7 +10,7 @@ RANK_VALUE = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5}
 SUIT_SYMBOLS = {'Hearts': '♡', 'Spades': '♠', 'Diamonds': '♢'}
 
 class Player:
-    def __init__(self, name, character=None, bluff_prob=0, call_prob=None, trust=dict(), belief_model=dict(), announce=list()):
+    def __init__(self, name, character=None, bluff_prob=0.0, call_prob=None, trust=dict(), belief_model=dict(), announce=list()):
         self.stash = list()
         self.grouped_stash = None
         self.name = name
@@ -193,9 +193,10 @@ class CredulousPlayer(Player):
             print("\n")
             return played
 
-
-
-    # def check_belief_model(self):
+    def Cred_set_belief(self, agent, card_known):
+        for i in range(0,len(card_known)):
+            self.belief_model[agent].popitem()
+        self.set_belief_model(agent, card_known)
 
 class SkepticalPlayer(Player):
     def __init__(self, name):
