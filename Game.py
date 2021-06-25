@@ -5,9 +5,15 @@ class Game:
         self.players = []
         self.played_deck = []
 
-        for i in range(hands):
-            name = "Player_" + str(i + 1)
-            self.players.append(SkepticalPlayer(name= name))
+        # for i in range(hands):
+        #     name = "Player_" + str(i + 1)
+        #     self.players.append(SkepticalPlayer(name= name))
+        name = "Player_1"
+        self.players.append(SkepticalPlayer(name=name))
+        name = "Player_2"
+        self.players.append(SkepticalPlayer(name=name))
+        name = "Player_3"
+        self.players.append(CredulousPlayer(name=name))
 
     def game_play(self):
         reset = 0
@@ -17,6 +23,7 @@ class Game:
         round_starter = 0
         pass_counter = 0
         round_card = None
+        announcement=list()
         # for player in self.players:
         #     print(player.name)
         #     for key, value in player.belief_model.items():
@@ -25,9 +32,8 @@ class Game:
         #             print(i.rank,i.suit)
         while not end_game:
             agent = (2 if i == 0 else i-1) #get previous agent who played
-            action = self.players[i].choose_action(reset, self.players[agent])
+            action = self.players[i].choose_action(reset, self.players[agent], announcement)
             if action == 1:  #agent plays
-
                 play = self.players[i].play(reset, self, round_card)
                 if type(play) is not int:  #if agent played
                     for card in play:
@@ -35,6 +41,8 @@ class Game:
                         self.players[i].calculate_groupstash()
                     #self.players[i].grouped_stash.remove(play)
                     self.played_deck.append(play)  #add played cards to played deck
+                    for k in play:
+                        announcement.append(self.players[i].announce[0])
             else:
                 bluff_play = self.players[i].call_bluff(self, self.players[agent])
                 print(bluff_play)
@@ -52,6 +60,7 @@ class Game:
                 reset = 0
                 i = round_starter
                 pass_counter = 0
+                announcement=list()
             else:
                 i = i + 1
 

@@ -2,6 +2,7 @@ import random
 from itertools import groupby
 import operator
 import numpy as np
+from collections import Counter
 
 SYMBOLS = ['♠', '♢', '♡', '♣']
 SUIT = ['Hearts', 'Spades', 'Diamonds']
@@ -10,7 +11,7 @@ RANK_VALUE = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5}
 SUIT_SYMBOLS = {'Hearts': '♡', 'Spades': '♠', 'Diamonds': '♢'}
 
 class Player:
-    def __init__(self, name, character=None, bluff_prob=0, call_prob=None, belief_model=dict(), announce=list()):
+    def __init__(self, name, character=None, bluff_prob=0.0, call_prob=None, belief_model=dict(), announce=list()):
         self.stash = list()
         self.grouped_stash = None
         self.name = name
@@ -42,15 +43,27 @@ class Player:
         self.stash.sort(key=operator.attrgetter('rank'))
         self.grouped_stash = [list(v) for k, v in groupby(self.stash, key=operator.attrgetter('rank'))]
 
-    def choose_action(self, reset, prev_agent):
+    def choose_action(self, reset, prev_agent, announcement):
         # if new round or previous play matches agent's belief, play a card
+        print(announcement)
+        print(self.belief_model)
         if reset == 0 or (not prev_agent.announce):  #new round or no announcement made by prev_agent
             return 1
-        check = self.check_belief_model(prev_agent)
-        if check is True:
+        if not self.check_belief_model(prev_agent):
+            return 2
+        else:
+            print("Checking announce")
+            if not self.check_announcement(prev_agent, announcement):
+                return 2
             return 1
-        # call bluff
-        return 2
+
+    def check_announcement(self,prev_agent, announcement):
+        announcement_count = Counter(announcement)
+        for key,val in announcement_count.items():
+            if key == prev_agent.announce[0]:
+                if val>3:
+                    return False
+        return True
 
     def check_belief_model(self, prev_agent):
         rank = prev_agent.announce[0]
@@ -72,7 +85,7 @@ class Player:
         for card in card_known:
             cards_known.append(card)
         if agent.name in self.belief_model.keys():
-                self.belief_model.get(agent.name).append(cards_known)
+            self.belief_model.get(agent.name).append(cards_known)
         else:
             self.belief_model.update({agent.name: cards_known})
         # print(self.name)
@@ -83,10 +96,14 @@ class Player:
 
     def call_bluff(self, game_obj, prev_agent):
         print("Agent-"+str(self.name)+"calls bluff on Agent-"+str(prev_agent.name))
-        if prev_agent.announce != game_obj.played_deck[-1]:
+        cards=list()
+        for card in game_obj.played_deck[-1]:
+            cards.append(card.rank)
+        if prev_agent.announce[0] != cards[-1]:
             print("Bluff caught")
             for agent in game_obj.players:
                 agent.set_belief_model(prev_agent, game_obj.played_deck[-1])
+        print(self.belief_model)
         return 1
 
 
@@ -179,9 +196,6 @@ class CredulousPlayer(Player):
             return 0
         else:
             self.announce = [played[0].rank]*len(played)
-            for player in game_obj.players:   #all player's belief system updated with card played by active player
-                if player.name != self.name:
-                    player.set_belief_model(self, self.announce)
             print("End of turn for " + self.name)
             print("\n")
             return played
@@ -194,9 +208,18 @@ class SkepticalPlayer(Player):
     def __init__(self, name):
         super().__init__(name, character="Skeptical", bluff_prob=0.5)
 
+    def choose_action(self, reset, prev_agent, announcement):
+
+        # if new round or previous play matches agent's belief, play a card
+        if reset == 0 or (not prev_agent.announce):  # new round or no announcement made by prev_agent
+            return 1
+        if not self.check_belief_model(prev_agent):
+            return 2
+        else:
+            return 1
+
     def play(self, reset, game_obj, round_card):
         player_bluff_probability = np.random.choice([0, 1], p = [self.bluff_prob, (1 - self.bluff_prob)])
-
         if player_bluff_probability == 0: #bluff_probability < 0.5, player doesnt bluff
             played = self.play_allrank(reset, round_card)
             if type(played) is int:
@@ -204,22 +227,14 @@ class SkepticalPlayer(Player):
                 return 0
             else:
                 self.announce = [played[0].rank]*len(played)
-                for player in game_obj.players:
-                    if player.name != self.name and player.character == "Credulous":
-                        player.set_belief_model(self, self.announce)
                 print ("End of turn for " + self.name)
                 print ("\n")
                 return played
-
         else:
-            
             #print (player_bluff_card[0].rank, player_bluff_card[0].suit)
 
             if round_card is None:
                 player_bluff_card = self.play_bluff(reset, None)
-                for player in game_obj.players:
-                    if (player.name != self.name) and (player.character == "Credulous"):
-                        player.set_belief_model(self, self.announce)
                 print (self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
                 print ("End of turn for " + self.name)
                 print ("\n")
@@ -229,12 +244,7 @@ class SkepticalPlayer(Player):
             else :
                 player_bluff_card = self.play_bluff(reset, round_card)
                 self.announce = round_card #playing the bluff card and announcing it as a real card
-
                 print (self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
-
-                for player in game_obj.players:
-                    if (player.name != self.name) and (player.character == "Credulous"):
-                        player.set_belief_model(self, self.announce)
                 print ("End of turn for " + self.name)
                 print ("\n")
                 return player_bluff_card
