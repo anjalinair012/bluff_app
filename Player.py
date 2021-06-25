@@ -11,7 +11,7 @@ RANK_VALUE = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5}
 SUIT_SYMBOLS = {'Hearts': '♡', 'Spades': '♠', 'Diamonds': '♢'}
 
 class Player:
-    def __init__(self, name, character=None, bluff_prob=0.0, call_prob=None, belief_model=dict(), announce=list()):
+    def __init__(self, name, character=None, bluff_prob=0.0, call_prob=None, belief_model=dict(), announce=list(), trust=dict()):
         self.stash = list()
         self.grouped_stash = None
         self.name = name
@@ -20,7 +20,7 @@ class Player:
         self.call_prob = call_prob
         self.belief_model = belief_model
         self.announce = announce
-
+        self.trust = trust
     def set_bluff_prob(self, bluff_prob):
         self.bluff_prob = bluff_prob
 
@@ -45,14 +45,11 @@ class Player:
 
     def choose_action(self, reset, prev_agent, announcement):
         # if new round or previous play matches agent's belief, play a card
-        print(announcement)
-        print(self.belief_model)
         if reset == 0 or (not prev_agent.announce):  #new round or no announcement made by prev_agent
             return 1
         if not self.check_belief_model(prev_agent):
             return 2
         else:
-            print("Checking announce")
             if not self.check_announcement(prev_agent, announcement):
                 return 2
             return 1
@@ -84,8 +81,10 @@ class Player:
         cards_known = list()
         for card in card_known:
             cards_known.append(card)
+        print("cards")
+        print(card_known)
         if agent.name in self.belief_model.keys():
-            self.belief_model.get(agent.name).append(cards_known)
+            self.belief_model.get(agent.name).extend(card_known)
         else:
             self.belief_model.update({agent.name: cards_known})
         # print(self.name)
@@ -101,10 +100,39 @@ class Player:
             cards.append(card.rank)
         if prev_agent.announce[0] != cards[-1]:
             print("Bluff caught")
+            for i in game_obj.played_deck:
+                if i is not None:
+                    for j in i:
+                        prev_agent.stash.append(j)
             for agent in game_obj.players:
-                agent.set_belief_model(prev_agent, game_obj.played_deck[-1])
-        print(self.belief_model)
-        return 1
+                if agent.name != prev_agent.name:
+                    agent.set_belief_model(prev_agent, game_obj.played_deck[-1])
+                else:
+                    temp=list()
+                    for i in game_obj.played_deck:
+                        if i is not None:
+                            for c in i:
+                                temp.append(c)
+                    agent.set_belief_model(prev_agent,temp)
+            prev_agent.calculate_groupstash()
+            return 1
+        else:
+            for i in game_obj.played_deck:
+                for j in i:
+                    if j is not None:
+                        self.stash.append(j)
+            for agent in game_obj.players:
+                if agent.name != self.name:
+                    agent.set_belief_model(self, game_obj.played_deck[-1])
+                else:
+                    temp = list()
+                    for i in game_obj.played_deck:
+                        if i is not None:
+                            for c in i:
+                                temp.append(c)
+                    agent.set_belief_model(self, temp)
+            prev_agent.calculate_groupstash()
+        return 0
 
 
     def removeFrom_hand(self, card):
@@ -140,9 +168,7 @@ class Player:
         return max_list
 
     def play_bluff(self, reset, round_card):
-
         if reset == 0:
-
             max_len = 0
             max_list = 0
 
@@ -227,8 +253,8 @@ class SkepticalPlayer(Player):
                 return 0
             else:
                 self.announce = [played[0].rank]*len(played)
-                print ("End of turn for " + self.name)
-                print ("\n")
+                print("End of turn for " + self.name)
+                print("\n")
                 return played
         else:
             #print (player_bluff_card[0].rank, player_bluff_card[0].suit)
@@ -241,10 +267,68 @@ class SkepticalPlayer(Player):
 
                 return player_bluff_card
 
-            else :
+            else:
                 player_bluff_card = self.play_bluff(reset, round_card)
                 self.announce = round_card #playing the bluff card and announcing it as a real card
                 print (self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
                 print ("End of turn for " + self.name)
                 print ("\n")
                 return player_bluff_card
+
+class RevisingPlayer(Player):
+    def __init__(self, name):
+        trust = dict()
+        for num in range(1, 4):
+            player_name = "Player_"+str(num)
+            if player_name != name:
+                trust[player_name] = 0.5
+        super().__init__(name, character="Revising", bluff_prob=0.5, trust=trust)
+
+    def play(self, reset, game_obj, round_card):
+        player_bluff_probability = np.random.choice([0, 1], p=[self.bluff_prob, (1 - self.bluff_prob)])
+        if player_bluff_probability == 0:  # bluff_probability < 0.5, player doesnt bluff
+            played = self.play_allrank(reset, round_card)
+            if type(played) is int:
+                print(self.name + "passed")
+                return 0
+            else:
+                self.announce = [played[0].rank] * len(played)
+                print("End of turn for " + self.name)
+                print("\n")
+                return played
+        else:
+            # print (player_bluff_card[0].rank, player_bluff_card[0].suit)
+
+            if round_card is None:
+                player_bluff_card = self.play_bluff(reset, None)
+                print(self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
+                print("End of turn for " + self.name)
+                print("\n")
+
+                return player_bluff_card
+
+            else:
+                player_bluff_card = self.play_bluff(reset, round_card)
+                self.announce = round_card  # playing the bluff card and announcing it as a real card
+                print(self.name + " announced " + self.announce + " and played " + player_bluff_card[0].rank)
+                print("End of turn for " + self.name)
+                print("\n")
+                return player_bluff_card
+
+    def choose_action(self, reset, prev_agent, announcement):
+        # if new round or previous play matches agent's belief, play a card
+        if reset == 0 or (not prev_agent.announce):  # new round or no announcement made by prev_agent
+            return 1
+        if not self.check_belief_model(prev_agent):
+            return 2
+        else:
+            if random.random()>self.trust[prev_agent.name]:
+                return 2
+            return 1
+
+    def call_bluff(self, game_obj, prev_agent):
+        bluff = super().call_bluff(game_obj, prev_agent)
+        if bluff == 1:
+            self.trust[prev_agent] = self.trust[prev_agent.name]-self.trust[prev_agent.name]/3
+        else:
+            self.trust[prev_agent] = self.trust[prev_agent.name] + self.trust[prev_agent.name]/3
