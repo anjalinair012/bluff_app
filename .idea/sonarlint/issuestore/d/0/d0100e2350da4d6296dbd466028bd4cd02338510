@@ -1,0 +1,9 @@
+
+qpython:S4487"VRemove this unread private attribute '__output' or refactor the code to use its value.(Èş›íşÿÿÿÿ
+bpython:S100"MRename method "__newGame" to match the regular expression ^[a-z_][a-z0-9_]*$.(ĞÍ¯•
+epython:S100"PRename method "__finishGame" to match the regular expression ^[a-z_][a-z0-9_]*$.(¤„À
+jpython:S3776"TRefactor this function to reduce its Cognitive Complexity from 30 to the 15 allowed.(¤„À
+cpython:S100"NRename method "__newRound" to match the regular expression ^[a-z_][a-z0-9_]*$.(ï¯ËÕ
+opython:S3776"TRefactor this function to reduce its Cognitive Complexity from 23 to the 15 allowed.(’˜“ºşÿÿÿÿ
+4python:S125"Remove this commented out code.(òó» 
+jpython:S3776"TRefactor this function to reduce its Cognitive Complexity from 81 to the 15 allowed.(ï®ÉÖ
