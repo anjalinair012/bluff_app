@@ -20,17 +20,8 @@ def main():
         player.set_belief_model(player, player.stash)
     for player in g.players:
         print(player.name)
-
-
-
         for card in player.stash:
             print(card.rank, SUIT_SYMBOLS[card.suit])
-
-
-
-
-
-
         print ("\n")
 
     g.game_play()
