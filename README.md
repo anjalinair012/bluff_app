@@ -6,5 +6,12 @@ Bluff is a very popular card game played all over the world with many variations
 We study how these different strategies benefit or cost the players.
 Details about the behaviour of the agents and findings can be found at https://blufflamas.herokuapp.com/
 
+# Requirement
+
+Run `pip install -r requirement.txt` to install all the necessary packages
+
+# Simulation
 To run the simulation:
+
+Run `python main.py`
 
