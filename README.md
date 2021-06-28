@@ -8,7 +8,7 @@ Details about the behaviour of the agents and findings can be found at https://b
 
 # Requirement
 
-Run `pip install -r requirement.txt` to install all the necessary packages
+Run `pip install -r requirements.txt` to install all the necessary packages
 
 # Simulation
 To run the simulation:
