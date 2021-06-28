@@ -1,4 +1,4 @@
-# bluff_app
+# Bluff Game Simulation
 Bluff is a very popular card game played all over the world with many variations. It's a strategic as well as a game of chance. With a degree of uncertaininty, this project aims to study three different strategies in playing bluff:
 -Credulous
 -Skeptic
